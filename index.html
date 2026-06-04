@@ -2450,6 +2450,38 @@ function exportHTML(){
     '.ro-rc-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}',
     '@media(max-width:680px){.ro-nav,.ro-main,.ro-toolbar,.ro-coll-bar,.ro-recent-bar{padding-left:1rem;padding-right:1rem}.ro-grid{grid-template-columns:1fr}.ro-sb{display:none}.ro-hero{padding:2.2rem 1.2rem 1.6rem}.ro-hero-stats{display:none}}',
     '@media(min-width:681px){.ro-media-wide{display:block}}',
+    /* ── Dashboard ── */
+    '#ro-dash-panel{display:none;padding:1.8rem 2rem 3rem;flex-direction:column;gap:1.6rem;overflow-y:auto}',
+    '#ro-dash-panel.on{display:flex}',
+    '.ro-dash-btn:hover,.ro-dash-btn.on{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd}',
+    '.dash-row{display:grid;gap:1rem}.dash-row-2{grid-template-columns:1fr 1fr}.dash-row-4{grid-template-columns:repeat(4,1fr)}',
+    '.dash-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:1.1rem 1.2rem;position:relative;overflow:hidden}',
+    '.dash-card::before{content:\'\';position:absolute;inset:0;background:linear-gradient(135deg,var(--dc-glow,transparent) 0%,transparent 60%);pointer-events:none;opacity:.4}',
+    '.dc-label{font-size:.59rem;text-transform:uppercase;letter-spacing:.13em;color:var(--mut);margin-bottom:.35rem;font-weight:500}',
+    '.dc-val{font-size:2.2rem;font-weight:800;font-family:var(--fd);line-height:1;margin-bottom:.18rem}',
+    '.dc-sub{font-size:.64rem;color:var(--mut2)}',
+    '.dash-title{font-family:var(--fd);font-size:.72rem;font-weight:600;color:var(--txt2);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}',
+    '.dash-title::after{content:\'\';flex:1;height:1px;background:rgba(255,255,255,.05)}',
+    '.dc-bars{display:flex;align-items:flex-end;gap:3px;height:72px;margin-top:.5rem}',
+    '.dc-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0}',
+    '.dc-bar{border-radius:3px 3px 0 0;min-height:2px;width:100%}',
+    '.dc-bar-lbl{font-size:.52rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}',
+    '.dc-donut{position:relative;display:flex;align-items:center;justify-content:center}',
+    '.dc-donut svg{transform:rotate(-90deg)}',
+    '.dc-donut-center{position:absolute;text-align:center}',
+    '.dc-lang-row{display:flex;align-items:center;gap:.55rem;padding:.28rem 0;border-bottom:1px solid rgba(255,255,255,.03)}',
+    '.dc-lang-row:last-child{border-bottom:none}',
+    '.dc-cx-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem}',
+    '.dc-cx-label{font-size:.65rem;color:var(--txt2);min-width:50px}',
+    '.dc-cx-track{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}',
+    '.dc-cx-fill{height:100%;border-radius:3px}',
+    '.dc-cx-count{font-size:.6rem;color:var(--mut);min-width:24px;text-align:right}',
+    '.dc-fn-item{display:flex;align-items:center;gap:.5rem;padding:.22rem 0;border-bottom:1px solid rgba(255,255,255,.03)}',
+    '.dc-fn-item:last-child{border-bottom:none}',
+    '.dc-fn-rank{font-family:var(--fc);font-size:.58rem;color:var(--mut);min-width:18px}',
+    '.dc-fn-name{font-family:var(--fc);font-size:.67rem;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.dc-fn-proj{font-size:.58rem;color:var(--mut2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}',
+    '.dc-fn-cx{font-family:var(--fc);font-size:.6rem;padding:.05rem .3rem;border-radius:3px}',
     '</style>',
     '</head>',
     '<body>'
@@ -2464,6 +2496,7 @@ function exportHTML(){
     '  <div style="display:flex;align-items:center;gap:.6rem"><span class="ro-logo">CODEX</span><span class="ro-badge">View Only</span></div>',
     '  <div style="display:flex;align-items:center;gap:.5rem">',
     '    <span style="font-size:.61rem;color:var(--mut)">'+sorted.length+' project'+(sorted.length!==1?'s':'')+' \xb7 '+new Date().toLocaleDateString('en',{day:'numeric',month:'short',year:'numeric'})+'</span>',
+    '    <button class="ro-btn ro-dash-btn" id="ro-dash-btn" onclick="toggleRoDash()">&#x2B1F; Stats</button>',
     '  </div>',
     '</nav>'
   ].join('\n');
@@ -2532,6 +2565,11 @@ function exportHTML(){
     '  <div class="ro-recent-chips">'+recentChips+'</div>',
     '</div>'
   ].join('\n') : '';
+
+  const htmlDashPanel = '<div id="ro-dash-panel"></div>';
+
+  const htmlGalleryAreaOpen  = '<div id="ro-gallery-area">';
+  const htmlGalleryAreaClose = '</div><!-- /ro-gallery-area -->';
 
   const htmlGallery = [
     '<main class="ro-main">',
@@ -2685,11 +2723,76 @@ async function copyROCode(){if(!curP)return;try{await navigator.clipboard.writeT
 function dlROCode(){if(!curP)return;const blob=new Blob([curP.code],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=EXT[curP.language]||'code.txt';a.click()}
 function toast2(msg){const t=document.getElementById('roToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();closeROFs()}});
+// ── Stats Dashboard ──────────────────────────────────────────
+let roDashOpen=false;
+function toggleRoDash(){
+  roDashOpen=!roDashOpen;
+  document.getElementById('ro-dash-panel').classList.toggle('on',roDashOpen);
+  document.getElementById('ro-gallery-area').style.display=roDashOpen?'none':'';
+  document.getElementById('ro-dash-btn').classList.toggle('on',roDashOpen);
+  if(roDashOpen)renderRoDash();
+}
+function fmtNum(n){if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return String(n)}
+function renderRoDash(){
+  const panel=document.getElementById('ro-dash-panel');if(!panel)return;
+  const LC2={JavaScript:'#f7df1e',TypeScript:'#3178c6',Python:'#3776ab',Rust:'#ce422b',Go:'#00add8',CSS:'#264de4',HTML:'#e34c26','C++':'#00599c',Java:'#007396',SQL:'#fbbf24',Shell:'#4ade80',Other:'#a855f7'};
+  const ccMap={Simple:'#4ade80',Medium:'#fbbf24',Complex:'#fb923c',High:'#fb7185'};
+  const projects=P.map(p=>{const s=cst(p.code);const cxs=cx(p.code);return{p,s,cxs}});
+  const totalLines=projects.reduce((s,x)=>s+x.s.tot,0);
+  const totalChars=projects.reduce((s,x)=>s+x.s.ch,0);
+  const starred=projects.filter(x=>x.p.starred).length;
+  const avgCx=projects.length?Math.round(projects.reduce((s,x)=>s+x.cxs,0)/projects.length):0;
+  const langMap={};projects.forEach(x=>{langMap[x.p.language]=(langMap[x.p.language]||0)+1});
+  const langEntries=Object.entries(langMap).sort((a,b)=>b[1]-a[1]);
+  const langLines={};projects.forEach(x=>{langLines[x.p.language]=(langLines[x.p.language]||0)+x.s.tot});
+  const langLinesArr=Object.entries(langLines).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const cxBuckets={Simple:0,Medium:0,Complex:0,High:0};
+  projects.forEach(x=>{if(x.cxs<30)cxBuckets.Simple++;else if(x.cxs<60)cxBuckets.Medium++;else if(x.cxs<80)cxBuckets.Complex++;else cxBuckets.High++});
+  const topCx=[...projects].sort((a,b)=>b.cxs-a.cxs).slice(0,5);
+  const topLines2=[...projects].sort((a,b)=>b.s.tot-a.s.tot).slice(0,5);
+  function sc(label,val,sub,color,glow){return '<div class="dash-card" style="--dc-glow:'+glow+'"><div class="dc-label">'+label+'</div><div class="dc-val" style="color:'+color+'">'+val+'</div><div class="dc-sub">'+sub+'</div></div>'}
+  let h='<div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">'
+    +'<div style="font-family:var(--fd);font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#fff,#93c5fd,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">&#x2B1F; Code Dashboard</div>'
+    +'<div style="font-size:.67rem;color:var(--mut)">'+P.length+' Projekte &middot; Statistiken</div>'
+    +'<div style="flex:1"></div>'
+    +'<button class="ro-btn" onclick="toggleRoDash()">&#x2715; Schlie&szlig;en</button>'
+    +'</div>';
+  h+='<div class="dash-row dash-row-4">';
+  h+=sc('Projekte Gesamt',P.length,starred+' favorisiert','#93c5fd','#3b82f640');
+  h+=sc('Zeilen Code',fmtNum(totalLines),'&uuml;ber alle Projekte','#4ade80','#22c55e40');
+  h+=sc('Zeichen',fmtNum(totalChars),'gesamt','#fbbf24','#f59e0b40');
+  h+=sc('&Oslash; Komplexit&auml;t',avgCx,'&uuml;ber alle Projekte','#c4b5fd','#a855f740');
+  h+='</div>';
+  const total=projects.length||1,donutR=52,donutC=64,stroke=18,circ=2*Math.PI*donutR;
+  let off=0;
+  const colors=langEntries.map(([l])=>LC2[l]||'#64748b');
+  const segs=langEntries.map(([lang,cnt],i)=>{const pct=cnt/total,dash=pct*circ;const s='<circle cx="'+donutC+'" cy="'+donutC+'" r="'+donutR+'" fill="none" stroke="'+colors[i]+'" stroke-width="'+stroke+'" stroke-dasharray="'+dash.toFixed(2)+' '+(circ-dash).toFixed(2)+'" stroke-dashoffset="'+(-off*circ/(2*Math.PI)).toFixed(2)+'" stroke-linecap="butt" opacity=".92"/>';off+=pct*circ;return s}).join('');
+  h+='<div class="dash-row dash-row-2">';
+  h+='<div class="dash-card"><div class="dash-title">Sprach-Verteilung</div><div style="display:flex;align-items:center;gap:1.2rem"><div class="dc-donut" style="width:128px;height:128px;flex-shrink:0"><svg width="128" height="128" viewBox="0 0 128 128">'+segs+'</svg><div class="dc-donut-center"><div style="font-size:1.4rem;font-weight:800;font-family:var(--fd);color:var(--txt)">'+P.length+'</div><div style="font-size:.56rem;color:var(--mut)">Projekte</div></div></div><div style="flex:1;min-width:0">';
+  langEntries.slice(0,6).forEach(([lang,cnt],i)=>{const pct=Math.round(cnt/total*100);h+='<div class="dc-lang-row"><span style="width:7px;height:7px;border-radius:50%;background:'+colors[i]+';display:inline-block;flex-shrink:0"></span><span style="font-size:.67rem;flex:1;color:var(--txt2)">'+lang+'</span><span style="font-family:var(--fc);font-size:.63rem;color:var(--txt)">'+cnt+'</span><span style="font-size:.58rem;color:var(--mut);min-width:28px;text-align:right">'+pct+'%</span></div>'});
+  h+='</div></div></div>';
+  const mxL=Math.max(...langLinesArr.map(x=>x[1]),1);
+  h+='<div class="dash-card"><div class="dash-title">Zeilen pro Sprache</div><div class="dc-bars">';
+  langLinesArr.forEach(([lang,lines])=>{const pct=lines/mxL*100,col=LC2[lang]||'#64748b';h+='<div class="dc-bar-wrap"><div style="font-size:.56rem;color:var(--mut);text-align:center">'+fmtNum(lines)+'</div><div class="dc-bar" style="height:'+pct+'%;background:'+col+'22;border:1px solid '+col+'44"></div><div class="dc-bar-lbl">'+lang.slice(0,4)+'</div></div>'});
+  h+='</div></div></div>';
+  const totalP=P.length||1;
+  h+='<div class="dash-row dash-row-2">';
+  h+='<div class="dash-card"><div class="dash-title">Komplexit&auml;ts-Verteilung</div>';
+  Object.entries(cxBuckets).forEach(([label,cnt])=>{const pct=Math.round(cnt/totalP*100),col=ccMap[label];h+='<div class="dc-cx-row"><span class="dc-cx-label" style="color:'+col+'">'+label+'</span><div class="dc-cx-track"><div class="dc-cx-fill" style="width:'+pct+'%;background:'+col+'"></div></div><span class="dc-cx-count">'+cnt+'</span></div>'});
+  h+='</div>';
+  h+='<div class="dash-card"><div class="dash-title">Komplexeste Projekte</div>';
+  topCx.forEach((x,i)=>{const cc=cxC(x.cxs);h+='<div style="display:flex;align-items:center;gap:.5rem;padding:.22rem 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer" onclick="openDetail(\''+x.p.id+'\')">'+'<span style="font-family:var(--fc);font-size:.58rem;color:var(--mut);min-width:14px">'+(i+1)+'</span><span style="flex:1;font-size:.68rem;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.p.name)+'</span><span style="font-size:.6rem;padding:.05rem .28rem;border-radius:3px;background:'+cc.c+'18;color:'+cc.c+'">'+x.cxs+'</span></div>'});
+  h+='</div></div>';
+  h+='<div class="dash-card"><div class="dash-title">Gr&ouml;&szlig;te Projekte</div>';
+  topLines2.forEach((x,i)=>{const lc=LC2[x.p.language]||'#64748b',pct=Math.round(x.s.tot/Math.max(topLines2[0].s.tot,1)*100);h+='<div style="margin-bottom:.55rem;cursor:pointer" onclick="openDetail(\''+x.p.id+'\')">'+'<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem"><span style="font-size:.6rem;color:var(--mut)">'+(i+1)+'</span><span style="width:6px;height:6px;border-radius:50%;background:'+lc+';display:inline-block"></span><span style="font-size:.68rem;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.p.name)+'</span><span style="font-family:var(--fc);font-size:.62rem;color:var(--txt2)">'+fmtNum(x.s.tot)+' Zeilen</span></div>'+'<div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+lc+';border-radius:2px;opacity:.6"></div></div></div>'});
+  h+='</div>';
+  panel.innerHTML=h;
+}
 <\/script>
 </body>
 </html>`;
 
-  const html = htmlHead+'\n'+htmlNav+'\n'+htmlHero+'\n'+htmlCollBar+'\n'+htmlToolbar+'\n'+htmlRecentBar+'\n'+htmlGallery+'\n'+htmlOverlay+'\n'+htmlFsOv+'\n'+exportedJS;
+  const html = htmlHead+'\n'+htmlNav+'\n'+htmlDashPanel+'\n'+htmlGalleryAreaOpen+'\n'+htmlHero+'\n'+htmlCollBar+'\n'+htmlToolbar+'\n'+htmlRecentBar+'\n'+htmlGallery+'\n'+htmlGalleryAreaClose+'\n'+htmlOverlay+'\n'+htmlFsOv+'\n'+exportedJS;
 
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
